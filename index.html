@@ -6,6 +6,8 @@
 <title>Pospoint Kurier</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -213,7 +215,48 @@ body{
 .step-dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
 .dot{height:6px;border-radius:3px;transition:all 0.3s;cursor:pointer}
 
-/* ── Keyframe animations ── */
+/* ── Map Modal ── */
+.map-modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.85);
+  z-index:9999;display:none;align-items:flex-end;justify-content:center;
+}
+.map-modal-overlay.open{display:flex}
+.map-modal{
+  width:100%;max-width:480px;
+  background:var(--bg2);
+  border-radius:24px 24px 0 0;
+  border:1px solid var(--border2);
+  overflow:hidden;
+  height:80vh;
+  display:flex;flex-direction:column;
+  animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.map-modal-header{
+  padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.map-modal-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800}
+.map-modal-close{
+  width:32px;height:32px;border-radius:50%;border:none;
+  background:var(--bg3);color:var(--text);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.map-modal-close:hover{background:var(--border2)}
+#leaflet-map{flex:1;width:100%}
+.map-modal-footer{
+  padding:14px 16px;border-top:1px solid var(--border);
+  flex-shrink:0;background:var(--bg2);
+}
+.map-info-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border-radius:10px;padding:10px 14px;
+  margin-bottom:10px;border:1px solid var(--border);
+  font-size:13px;color:var(--text2);
+}
+.map-info-chip strong{color:var(--text);font-weight:600}
+</style>
 @keyframes pulse-map{
   0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.5)}
   50%{box-shadow:0 0 0 8px rgba(59,130,246,0)}
@@ -322,7 +365,7 @@ body{
           <div class="card-title" style="font-size:18px">Café Baraka</div>
           <div class="card-sub">Mirzo Ulug'bek ko'chasi, 42 • Olmaliq, Toshkent</div>
           <div style="margin-top:12px">
-            <button class="btn btn-ghost btn-small" style="width:100%" onclick="openMap()">
+            <button class="btn btn-ghost btn-small" style="width:100%" onclick="openMap('restaurant')">
               🗺️ &nbsp;Xaritada ochish
             </button>
           </div>
@@ -447,9 +490,9 @@ body{
                 📞 QONG'IROQ
               </button>
             </div>
-            <div class="info-row">
+            <div class="info-row" style="cursor:pointer" onclick="openMap('customer')">
               <div class="info-icon">📍</div>
-              <div><div class="info-val">Chilonzor 10, kv. 15-45</div><div class="info-sub-val">Toshkent shahri</div></div>
+              <div style="flex:1"><div class="info-val">Chilonzor 10, kv. 15-45</div><div class="info-sub-val">Toshkent shahri — xaritada ko'rish →</div></div>
             </div>
             <div class="info-row">
               <div class="info-icon">🌳</div>
@@ -550,8 +593,126 @@ body{
   <div class="dot" data-screen="screen-done" style="width:6px;background:var(--border2)"></div>
 </div>
 
+<!-- ═══ MAP MODAL (Leaflet + OpenStreetMap) ═══ -->
+<div class="map-modal-overlay" id="map-modal-overlay" onclick="closeMapModal(event)">
+  <div class="map-modal">
+    <div class="map-modal-header">
+      <div>
+        <div class="map-modal-title" id="map-modal-title">📍 Restoran manzili</div>
+      </div>
+      <button class="map-modal-close" onclick="closeMapModalBtn()">✕</button>
+    </div>
+    <div id="leaflet-map"></div>
+    <div class="map-modal-footer">
+      <div class="map-info-chip" id="map-address-chip">
+        📍 <strong>Café Baraka</strong> — Mirzo Ulug'bek ko'chasi, 42
+      </div>
+      <div style="display:flex;gap:8px">
+        <a id="map-osm-link" href="#" target="_blank" rel="noopener"
+          style="flex:1;height:44px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-decoration:none;gap:6px">
+          🗺️ OpenStreetMap
+        </a>
+        <a id="map-google-link" href="#" target="_blank" rel="noopener"
+          style="flex:1;height:44px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-decoration:none;gap:6px">
+          🔵 Google Maps
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 let current = 'screen-notify';
+let leafletMap = null;
+let leafletMarker = null;
+
+/* ── Manzillar ma'lumotlari ── */
+const LOCATIONS = {
+  restaurant: {
+    lat: 41.3165,
+    lng: 69.2401,
+    name: 'Café Baraka',
+    address: "Mirzo Ulug'bek ko'chasi, 42, Toshkent",
+    color: '#FF6B2B',
+    emoji: '🍽️'
+  },
+  customer: {
+    lat: 41.2995,
+    lng: 69.2167,
+    name: 'Farrux A. (Mijoz)',
+    address: "Chilonzor 10, kv. 15-45, Toshkent",
+    color: '#3B82F6',
+    emoji: '🏠'
+  }
+};
+
+function openMap(locKey) {
+  var loc = LOCATIONS[locKey] || LOCATIONS.restaurant;
+
+  /* Modal header va address */
+  document.getElementById('map-modal-title').textContent = loc.emoji + ' ' + loc.name;
+  document.getElementById('map-address-chip').innerHTML =
+    '📍 <strong>' + loc.name + '</strong> — ' + loc.address;
+
+  /* Tashqi havolalar */
+  var osmUrl = 'https://www.openstreetmap.org/?mlat=' + loc.lat + '&mlon=' + loc.lng + '&zoom=16';
+  var gUrl   = 'https://www.google.com/maps/search/?api=1&query=' + loc.lat + ',' + loc.lng;
+  document.getElementById('map-osm-link').href   = osmUrl;
+  document.getElementById('map-google-link').href = gUrl;
+
+  /* Modalni ochish */
+  var overlay = document.getElementById('map-modal-overlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  /* Leaflet xaritani yaratish yoki yangilash */
+  setTimeout(function(){
+    if (!leafletMap) {
+      leafletMap = L.map('leaflet-map', {
+        center: [loc.lat, loc.lng],
+        zoom: 16,
+        zoomControl: true,
+        attributionControl: true
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+        maxZoom: 19
+      }).addTo(leafletMap);
+    } else {
+      leafletMap.setView([loc.lat, loc.lng], 16);
+      if (leafletMarker) {
+        leafletMap.removeLayer(leafletMarker);
+      }
+    }
+
+    /* Custom marker */
+    var markerIcon = L.divIcon({
+      className: '',
+      html: '<div style="background:' + loc.color + ';width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:16px;display:block;text-align:center;line-height:30px">' + loc.emoji + '</span></div>',
+      iconSize: [36, 36],
+      iconAnchor: [18, 36]
+    });
+
+    leafletMarker = L.marker([loc.lat, loc.lng], {icon: markerIcon})
+      .addTo(leafletMap)
+      .bindPopup('<strong>' + loc.name + '</strong><br>' + loc.address)
+      .openPopup();
+
+    leafletMap.invalidateSize();
+  }, 100);
+}
+
+function closeMapModal(e) {
+  if (e.target === document.getElementById('map-modal-overlay')) {
+    closeMapModalBtn();
+  }
+}
+
+function closeMapModalBtn() {
+  document.getElementById('map-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
 function goTo(id) {
   const prev = document.getElementById(current);
@@ -604,12 +765,6 @@ function setPayType(type) {
   }
 }
 
-function openMap() {
-  var btn = event.currentTarget;
-  btn.textContent = '🗺️  Ochilmoqda...';
-  setTimeout(function(){ btn.innerHTML = '🗺️ &nbsp;Xaritada ochish'; }, 1500);
-}
-
 function callCustomer(btn) {
   btn.style.background = 'rgba(34,197,94,0.2)';
   btn.textContent = "📞 Qo'ng'iroq...";
@@ -619,5 +774,60 @@ function callCustomer(btn) {
   }, 2000);
 }
 </script>
+</body>
+</html>
+
+function goTo(id) {
+  const prev = document.getElementById(current);
+  const next = document.getElementById(id);
+  prev.classList.remove('active');
+  prev.classList.add('exit');
+  next.classList.add('active');
+  setTimeout(function(){ prev.classList.remove('exit'); }, 450);
+  current = id;
+  updateDots();
+}
+
+function updateDots() {
+  document.querySelectorAll('.dot').forEach(function(d){
+    var isActive = d.dataset.screen === current;
+    d.style.width = isActive ? '28px' : '6px';
+    d.style.background = isActive ? 'var(--accent)' : 'var(--border2)';
+  });
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  var box = el.querySelector('.check-box');
+  box.textContent = el.classList.contains('checked') ? '✓' : '';
+  document.getElementById('check-warning').style.display = 'none';
+}
+
+function checkAllAndProceed() {
+  var items = document.querySelectorAll('.check-item');
+  var allChecked = true;
+  items.forEach(function(i){ if (!i.classList.contains('checked')) allChecked = false; });
+  if (!allChecked) {
+    document.getElementById('check-warning').style.display = 'block';
+    return;
+  }
+  goTo('screen-enroute');
+}
+
+function setPayType(type) {
+  if (type === 'cash') {
+    document.getElementById('pay-cash').style.display = 'block';
+    document.getElementById('pay-paid').style.display = 'none';
+    document.getElementById('pay-cash-btn').classList.add('active');
+    document.getElementById('pay-paid-btn').classList.remove('active');
+  } else {
+    document.getElementById('pay-cash').style.display = 'none';
+    document.getElementById('pay-paid').style.display = 'block';
+    document.getElementById('pay-cash-btn').classList.remove('active');
+    document.getElementById('pay-paid-btn').classList.add('active');
+  }
+}
+
+<!-- scripts above -->
 </body>
 </html>
