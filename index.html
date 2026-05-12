@@ -1,1387 +1,967 @@
 <!DOCTYPE html>
-<html lang="uz">
-
+<html lang="uz" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pospoint Kurier</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800;900&display=swap"
-    rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0
-    }
-
-    :root {
-      --bg: #0D0F14;
-      --bg2: #161A22;
-      --bg3: #1E2330;
-      --bg4: #252C3A;
-      --accent: #FF6B2B;
-      --accent2: #FFB347;
-      --green: #22C55E;
-      --red: #EF4444;
-      --text: #F0F2F8;
-      --text2: #9AA3B8;
-      --text3: #5C6580;
-      --border: #2A3148;
-      --border2: #3A4460;
-      --blue: #3B82F6;
-    }
-
-    body {
-      background: #111318;
-      font-family: 'Barlow', sans-serif;
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px 0 30px;
-    }
-
-    /* ── Phone shell ── */
-    .phone-shell {
-      width: 375px;
-      height: 780px;
-      background: var(--bg);
-      border-radius: 44px;
-      border: 2px solid var(--border2);
-      overflow: hidden;
-      position: relative;
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 30px 80px rgba(0, 0, 0, 0.6);
-    }
-
-    .notch {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 120px;
-      height: 34px;
-      background: #0D0F14;
-      border-radius: 0 0 20px 20px;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .notch-cam {
-      width: 10px;
-      height: 10px;
-      background: #1a1a2e;
-      border-radius: 50%;
-      border: 1px solid #333
-    }
-
-    .screen {
-      position: absolute;
-      inset: 0;
-      overflow: hidden
-    }
-
-    /* ── Slides ── */
-    .slide {
-      position: absolute;
-      inset: 0;
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      transform: translateX(100%);
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .slide.active {
-      transform: translateX(0)
-    }
-
-    .slide.exit {
-      transform: translateX(-100%)
-    }
-
-    /* ── Top bar ── */
-    .topbar {
-      padding: 44px 20px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-
-    .topbar-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 0.5px
-    }
-
-    .topbar-sub {
-      font-size: 12px;
-      color: var(--text2);
-      margin-top: 1px
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green)
-    }
-
-    .badge {
-      background: var(--accent);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-family: 'Barlow Condensed', sans-serif;
-      letter-spacing: 0.5px
-    }
-
-    .badge.green {
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--green);
-      border: 1px solid rgba(34, 197, 94, 0.3)
-    }
-
-    .badge.orange {
-      background: rgba(255, 107, 43, 0.15);
-      color: var(--accent);
-      border: 1px solid rgba(255, 107, 43, 0.3)
-    }
-
-    .badge.blue {
-      background: rgba(59, 130, 246, 0.15);
-      color: var(--blue);
-      border: 1px solid rgba(59, 130, 246, 0.3)
-    }
-
-    /* ── Cards ── */
-    .card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      margin: 0 16px 12px
-    }
-
-    .card-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text3);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 8px
-    }
-
-    .card-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      line-height: 1.1
-    }
-
-    .card-sub {
-      font-size: 13px;
-      color: var(--text2);
-      margin-top: 4px
-    }
-
-    .row {
-      display: flex;
-      align-items: center;
-      gap: 8px
-    }
-
-    .row.between {
-      justify-content: space-between
-    }
-
-    /* ── Buttons ── */
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 0 20px;
-      height: 56px;
-      border-radius: 14px;
-      border: none;
-      cursor: pointer;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      color: #fff;
-      width: 100%;
-      transition: transform 0.1s, opacity 0.1s;
-    }
-
-    .btn:active {
-      transform: scale(0.97)
-    }
-
-    .btn-primary {
-      background: var(--accent)
-    }
-
-    .btn-green {
-      background: var(--green)
-    }
-
-    .btn-ghost {
-      background: var(--bg3);
-      border: 1px solid var(--border2);
-      color: var(--text)
-    }
-
-    .btn-small {
-      height: 40px;
-      font-size: 14px;
-      border-radius: 10px;
-      padding: 0 14px;
-      width: auto
-    }
-
-    /* ── Notification overlay ── */
-    .notify-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: flex-end;
-      padding-bottom: 20px;
-    }
-
-    .notify-card {
-      margin: 0 12px;
-      width: calc(100% - 24px);
-      background: var(--bg2);
-      border-radius: 24px;
-      border: 1px solid var(--border2);
-      overflow: hidden;
-    }
-
-    .notify-top {
-      background: var(--accent);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px
-    }
-
-    .notify-icon {
-      width: 36px;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px
-    }
-
-    .notify-body {
-      padding: 16px
-    }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin: 12px 0
-    }
-
-    .stat-box {
-      background: var(--bg3);
-      border-radius: 10px;
-      padding: 10px 8px;
-      text-align: center;
-      border: 1px solid var(--border)
-    }
-
-    .stat-val {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 20px;
-      font-weight: 800
-    }
-
-    .stat-lbl {
-      font-size: 10px;
-      color: var(--text3);
-      margin-top: 2px;
-      font-weight: 500;
-      letter-spacing: 0.5px
-    }
-
-    .slide-btn {
-      height: 60px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 16px;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: 1px;
-      transition: transform 0.1s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .slide-btn:active {
-      transform: scale(0.98)
-    }
-
-    /* ── Map block ── */
-    .map-block {
-      flex: 1;
-      margin: 0 16px;
-      border-radius: 16px;
-      overflow: hidden;
-      background: var(--bg3);
-      position: relative;
-      border: 1px solid var(--border);
-      min-height: 180px;
-    }
-
-    .map-road-h {
-      position: absolute;
-      background: var(--border2);
-      height: 2px;
-      width: 100%
-    }
-
-    .map-road-v {
-      position: absolute;
-      background: var(--border2);
-      width: 2px;
-      height: 100%
-    }
-
-    .map-pin {
-      position: absolute;
-      font-size: 24px;
-      transform: translate(-50%, -100%)
-    }
-
-    .map-label {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      background: rgba(13, 15, 20, 0.85);
-      border-radius: 10px;
-      padding: 8px 12px;
-      font-size: 12px;
-      color: var(--text2);
-      border: 1px solid var(--border);
-    }
-
-    .map-pulse {
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      background: var(--blue);
-      border-radius: 50%;
-      border: 2px solid #fff;
-      animation: pulse-map 2s infinite;
-    }
-
-    /* ── Checklist ── */
-    .check-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background: var(--bg3);
-      border-radius: 12px;
-      margin-bottom: 8px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-    }
-
-    .check-item.checked {
-      border-color: rgba(34, 197, 94, 0.4);
-      background: rgba(34, 197, 94, 0.06)
-    }
-
-    .check-box {
-      width: 24px;
-      height: 24px;
-      border-radius: 7px;
-      border: 2px solid var(--border2);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-      font-size: 14px;
-    }
-
-    .check-item.checked .check-box {
-      background: var(--green);
-      border-color: var(--green);
-      color: #fff
-    }
-
-    .check-text {
-      font-size: 15px;
-      font-weight: 500
-    }
-
-    .check-sub {
-      font-size: 12px;
-      color: var(--text3);
-      margin-top: 1px
-    }
-
-    /* ── Payment ── */
-    .pay-big {
-      text-align: center;
-      padding: 24px 20px;
-      border-radius: 20px;
-      margin: 0 16px 16px
-    }
-
-    .pay-big.cash {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3)
-    }
-
-    .pay-big.paid {
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid rgba(34, 197, 94, 0.3)
-    }
-
-    .pay-big-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 8px
-    }
-
-    .pay-big.cash .pay-big-label {
-      color: var(--red)
-    }
-
-    .pay-big.paid .pay-big-label {
-      color: var(--green)
-    }
-
-    .pay-big-amount {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 42px;
-      font-weight: 900;
-      line-height: 1
-    }
-
-    .pay-big.cash .pay-big-amount {
-      color: var(--red)
-    }
-
-    .pay-big.paid .pay-big-amount {
-      color: var(--green)
-    }
-
-    .pay-big-sub {
-      font-size: 13px;
-      margin-top: 6px
-    }
-
-    .pay-big.cash .pay-big-sub {
-      color: rgba(239, 68, 68, 0.7)
-    }
-
-    .pay-big.paid .pay-big-sub {
-      color: rgba(34, 197, 94, 0.7)
-    }
-
-    /* ── Done screen ── */
-    .done-icon {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: rgba(34, 197, 94, 0.15);
-      border: 2px solid var(--green);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 36px;
-      margin-bottom: 20px;
-      animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-    }
-
-    /* ── Misc ── */
-    .bottom-nav {
-      flex-shrink: 0;
-      padding: 12px 16px 28px;
-      border-top: 1px solid var(--border);
-      background: var(--bg2)
-    }
-
-    .scrollable {
-      flex: 1;
-      overflow-y: auto;
-      padding-bottom: 8px
-    }
-
-    .scrollable::-webkit-scrollbar {
-      display: none
-    }
-
-    .info-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      background: var(--bg3);
-      border-radius: 10px;
-      margin-bottom: 6px
-    }
-
-    .info-icon {
-      font-size: 16px;
-      width: 28px;
-      text-align: center;
-      flex-shrink: 0
-    }
-
-    .info-val {
-      font-size: 14px;
-      font-weight: 500
-    }
-
-    .info-sub-val {
-      font-size: 12px;
-      color: var(--text3)
-    }
-
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 12px 16px
-    }
-
-    .section-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text3);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      padding: 0 16px;
-      margin-bottom: 8px
-    }
-
-    .earning-banner {
-      background: rgba(255, 107, 43, 0.08);
-      border: 1px solid rgba(255, 107, 43, 0.25);
-      border-radius: 14px;
-      margin: 0 16px 12px;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .earning-val {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 28px;
-      font-weight: 900;
-      color: var(--accent)
-    }
-
-    .earning-label {
-      font-size: 12px;
-      color: var(--text3);
-      margin-top: 1px
-    }
-
-    .toggle-row {
-      display: flex;
-      gap: 8px;
-      padding: 0 16px;
-      margin-bottom: 12px
-    }
-
-    .toggle-btn {
-      flex: 1;
-      padding: 8px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 700;
-      border: 1px solid var(--border2);
-      background: var(--bg3);
-      color: var(--text2);
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: 'Barlow', sans-serif;
-    }
-
-    .toggle-btn.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff
-    }
-
-    .progress-bar {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 12px
-    }
-
-    .progress-seg {
-      flex: 1;
-      height: 4px;
-      border-radius: 2px
-    }
-
-    .progress-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase
-    }
-
-    /* ── Step dots ── */
-    .step-dots {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      margin-top: 14px
-    }
-
-    .dot {
-      height: 6px;
-      border-radius: 3px;
-      transition: all 0.3s;
-      cursor: pointer
-    }
-
-    /* ── Map Modal ── */
-    .map-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 9999;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-    }
-
-    .map-modal-overlay.open {
-      display: flex
-    }
-
-    .map-modal {
-      width: 100%;
-      max-width: 480px;
-      background: var(--bg2);
-      border-radius: 24px 24px 0 0;
-      border: 1px solid var(--border2);
-      overflow: hidden;
-      height: 80vh;
-      display: flex;
-      flex-direction: column;
-      animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes slideUp {
-      from {
-        transform: translateY(100%)
-      }
-
-      to {
-        transform: translateY(0)
-      }
-    }
-
-    .map-modal-header {
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .map-modal-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 18px;
-      font-weight: 800
-    }
-
-    .map-modal-close {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: none;
-      background: var(--bg3);
-      color: var(--text);
-      font-size: 18px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .map-modal-close:hover {
-      background: var(--border2)
-    }
-
-    #leaflet-map {
-      flex: 1;
-      width: 100%
-    }
-
-    .map-modal-footer {
-      padding: 14px 16px;
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-      background: var(--bg2);
-    }
-
-    .map-info-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--bg3);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      border: 1px solid var(--border);
-      font-size: 13px;
-      color: var(--text2);
-    }
-
-    .map-info-chip strong {
-      color: var(--text);
-      font-weight: 600
-    }
-  </style>
-  <style>
-    @keyframes pulse-map {
-
-      0%,
-      100% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5)
-      }
-
-      50% {
-        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0)
-      }
-    }
-
-    @keyframes pop {
-      from {
-        transform: scale(0.5);
-        opacity: 0
-      }
-
-      to {
-        transform: scale(1);
-        opacity: 1
-      }
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pospoint Kurier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── DARK THEME (default) ── */
+[data-theme="dark"]{
+  --bg:#0D0F14;--bg2:#161A22;--bg3:#1E2330;
+  --accent:#FF6B2B;--accent2:#FFB347;--green:#22C55E;--red:#EF4444;
+  --text:#F0F2F8;--text2:#9AA3B8;--text3:#5C6580;
+  --border:#2A3148;--border2:#3A4460;--blue:#3B82F6;
+  --body-bg:#111318;--shell-border:#3A4460;
+  --notch-bg:#0D0F14;
+  --sidesheet-bg:#161A22;
+  --theme-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='%239AA3B8'%3E%3Cpath d='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'/%3E%3C/svg%3E");
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"]{
+  --bg:#F4F6FA;--bg2:#FFFFFF;--bg3:#EEF1F8;
+  --accent:#FF6B2B;--accent2:#F59E0B;--green:#16A34A;--red:#DC2626;
+  --text:#1A1D2E;--text2:#4B5368;--text3:#8A93AA;
+  --border:#DDE1EE;--border2:#C8CEDF;--blue:#2563EB;
+  --body-bg:#E8ECF5;--shell-border:#C8CEDF;
+  --notch-bg:#F4F6FA;
+  --sidesheet-bg:#FFFFFF;
+  --theme-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='%234B5368'%3E%3Ccircle cx='12' cy='12' r='5'/%3E%3Cline x1='12' y1='1' x2='12' y2='3' stroke='%234B5368' stroke-width='2'/%3E%3Cline x1='12' y1='21' x2='12' y2='23' stroke='%234B5368' stroke-width='2'/%3E%3Cline x1='4.22' y1='4.22' x2='5.64' y2='5.64' stroke='%234B5368' stroke-width='2'/%3E%3Cline x1='18.36' y1='18.36' x2='19.78' y2='19.78' stroke='%234B5368' stroke-width='2'/%3E%3Cline x1='1' y1='12' x2='3' y2='12' stroke='%234B5368' stroke-width='2'/%3E%3Cline x1='21' y1='12' x2='23' y2='12' stroke='%234B5368' stroke-width='2'/%3E%3Cline x1='4.22' y1='19.78' x2='5.64' y2='18.36' stroke='%234B5368' stroke-width='2'/%3E%3Cline x1='18.36' y1='5.64' x2='19.78' y2='4.22' stroke='%234B5368' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+body{
+  background:var(--body-bg);font-family:'Barlow',sans-serif;color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:20px 0 30px;
+  transition:background 0.3s;
+}
+.phone-shell{
+  width:375px;height:780px;background:var(--bg);
+  border-radius:44px;border:2px solid var(--shell-border);overflow:hidden;
+  position:relative;box-shadow:0 0 0 1px rgba(255,255,255,0.04) inset,0 30px 80px rgba(0,0,0,0.4);
+  transition:background 0.3s,border-color 0.3s;
+}
+.notch{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;background:var(--notch-bg);
+  border-radius:0 0 20px 20px;z-index:100;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.notch-cam{width:10px;height:10px;background:var(--bg3);border-radius:50%;border:1px solid var(--border)}
+.screen{position:absolute;inset:0;overflow:hidden}
+.slide{
+  position:absolute;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;
+  transform:translateX(100%);
+  transition:transform 0.4s cubic-bezier(0.4,0,0.2,1),background 0.3s;
+}
+.slide.active{transform:translateX(0)}
+.slide.exit{transform:translateX(-100%)}
+
+/* ── Topbar ── */
+.topbar{
+  padding:44px 20px 12px;display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0;
+}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.avatar-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:2px solid var(--border2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;
+  color:#fff;flex-shrink:0;transition:transform 0.15s;
+}
+.avatar-btn:hover{transform:scale(1.08)}
+.topbar-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:0.5px}
+.topbar-sub{font-size:12px;color:var(--text2);margin-top:1px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.badge{background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px}
+.badge.green{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.badge.orange{background:rgba(255,107,43,0.15);color:var(--accent);border:1px solid rgba(255,107,43,0.3)}
+.badge.blue{background:rgba(59,130,246,0.15);color:var(--blue);border:1px solid rgba(59,130,246,0.3)}
+
+/* ── Cards ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin:0 16px 12px;transition:background 0.3s,border-color 0.3s}
+.card-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;line-height:1.1}
+.card-sub{font-size:13px;color:var(--text2);margin-top:4px}
+.row{display:flex;align-items:center;gap:8px}
+.row.between{justify-content:space-between}
+
+/* ── Buttons ── */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:0 20px;height:56px;border-radius:14px;border:none;cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;
+  letter-spacing:0.8px;color:#fff;width:100%;transition:transform 0.1s;
+}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--accent)}
+.btn-green{background:var(--green)}
+.btn-ghost{background:var(--bg3);border:1px solid var(--border2);color:var(--text)}
+.btn-small{height:40px;font-size:14px;border-radius:10px;padding:0 14px;width:auto}
+
+/* ── Notify overlay ── */
+.notify-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;padding-bottom:20px}
+.notify-card{margin:0 12px;width:calc(100% - 24px);background:var(--bg2);border-radius:24px;border:1px solid var(--border2);overflow:hidden}
+.notify-top{background:var(--accent);padding:14px 16px;display:flex;align-items:center;gap:10px}
+.notify-icon{width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.notify-body{padding:16px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}
+.stat-box{background:var(--bg3);border-radius:10px;padding:10px 8px;text-align:center;border:1px solid var(--border);transition:background 0.3s}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:2px;font-weight:500;letter-spacing:0.5px}
+.slide-btn{
+  height:60px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:16px;border:none;cursor:pointer;width:100%;
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;
+  color:#fff;letter-spacing:1px;transition:transform 0.1s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.slide-btn:active{transform:scale(0.98)}
+
+/* ── Map block (mockup) ── */
+.map-block{flex:1;margin:0 16px;border-radius:16px;overflow:hidden;background:var(--bg3);position:relative;border:1px solid var(--border);min-height:180px;transition:background 0.3s}
+.map-road-h{position:absolute;background:var(--border2);height:2px;width:100%}
+.map-road-v{position:absolute;background:var(--border2);width:2px;height:100%}
+.map-pin{position:absolute;font-size:24px;transform:translate(-50%,-100%)}
+.map-label{position:absolute;bottom:10px;left:10px;right:10px;background:rgba(13,15,20,0.85);border-radius:10px;padding:8px 12px;font-size:12px;color:#ccc;border:1px solid var(--border)}
+.map-pulse{position:absolute;width:16px;height:16px;background:var(--blue);border-radius:50%;border:2px solid #fff;animation:pulse-map 2s infinite}
+
+/* ── Checklist ── */
+.check-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border-radius:12px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer;transition:border-color 0.2s,background 0.2s}
+.check-item.checked{border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.06)}
+.check-box{width:24px;height:24px;border-radius:7px;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:14px}
+.check-item.checked .check-box{background:var(--green);border-color:var(--green);color:#fff}
+.check-text{font-size:15px;font-weight:500}
+.check-sub{font-size:12px;color:var(--text3);margin-top:1px}
+
+/* ── Done ── */
+.done-icon{width:80px;height:80px;border-radius:50%;background:rgba(34,197,94,0.15);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:20px;animation:pop 0.6s cubic-bezier(0.175,0.885,0.32,1.275) both}
+
+/* ── Layout helpers ── */
+.bottom-nav{flex-shrink:0;padding:12px 16px 28px;border-top:1px solid var(--border);background:var(--bg2);transition:background 0.3s,border-color 0.3s}
+.scrollable{flex:1;overflow-y:auto;padding-bottom:8px}
+.scrollable::-webkit-scrollbar{display:none}
+.info-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border-radius:10px;margin-bottom:6px;transition:background 0.3s}
+.info-icon{font-size:16px;width:28px;text-align:center;flex-shrink:0}
+.info-val{font-size:14px;font-weight:500}
+.info-sub-val{font-size:12px;color:var(--text3)}
+.divider{height:1px;background:var(--border);margin:12px 16px}
+.section-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:0 16px;margin-bottom:8px}
+.earning-banner{background:rgba(255,107,43,0.08);border:1px solid rgba(255,107,43,0.25);border-radius:14px;margin:0 16px 12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.earning-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--accent)}
+.earning-label{font-size:12px;color:var(--text3);margin-top:1px}
+.progress-bar{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.progress-seg{flex:1;height:4px;border-radius:2px}
+.progress-labels{display:flex;justify-content:space-between;font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.step-dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
+.dot{height:6px;border-radius:3px;transition:all 0.3s}
+
+/* ── SIDESHEET ── */
+.sidesheet-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,0.6);
+  z-index:200;opacity:0;pointer-events:none;
+  transition:opacity 0.3s;
+}
+.sidesheet-overlay.open{opacity:1;pointer-events:all}
+.sidesheet{
+  position:absolute;top:0;left:0;bottom:0;width:290px;
+  background:var(--sidesheet-bg);
+  transform:translateX(-100%);
+  transition:transform 0.35s cubic-bezier(0.4,0,0.2,1),background 0.3s;
+  display:flex;flex-direction:column;
+  border-right:1px solid var(--border);
+}
+.sidesheet-overlay.open .sidesheet{transform:translateX(0)}
+
+/* Profile header inside sidesheet */
+.ss-profile{
+  padding:52px 20px 20px;
+  background:linear-gradient(160deg,var(--accent) 0%,#c84a0f 100%);
+  flex-shrink:0;
+}
+.ss-avatar{
+  width:64px;height:64px;border-radius:50%;
+  background:rgba(255,255,255,0.25);
+  border:3px solid rgba(255,255,255,0.5);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;
+  color:#fff;margin-bottom:12px;
+}
+.ss-name{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;line-height:1.1}
+.ss-car{font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px}
+
+/* Balance + stats inside sidesheet */
+.ss-balance{
+  margin:0 16px;margin-top:-1px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:14px;flex-shrink:0;
+  transition:background 0.3s,border-color 0.3s;
+}
+.ss-balance-label{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.ss-balance-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--green)}
+.ss-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ss-stat{background:var(--bg3);border-radius:10px;padding:8px 10px;border:1px solid var(--border);transition:background 0.3s}
+.ss-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--text)}
+.ss-stat-lbl{font-size:10px;color:var(--text3);margin-top:1px}
+
+/* Menu items */
+.ss-menu{flex:1;overflow-y:auto;padding:12px 0}
+.ss-section-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:12px 20px 4px}
+.ss-item{
+  display:flex;align-items:center;gap:12px;padding:12px 20px;
+  cursor:pointer;transition:background 0.15s;color:var(--text);
+  border:none;background:none;width:100%;text-align:left;
+}
+.ss-item:hover{background:var(--bg3)}
+.ss-item:active{background:var(--border)}
+.ss-item-icon{width:32px;height:32px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:background 0.3s}
+.ss-item-text{font-size:14px;font-weight:500}
+.ss-item-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.ss-item-right{margin-left:auto;font-size:12px;color:var(--text3)}
+.ss-divider{height:1px;background:var(--border);margin:8px 16px}
+
+/* Theme toggle pill */
+.theme-pill{
+  display:flex;background:var(--bg3);border-radius:20px;border:1px solid var(--border);
+  padding:3px;gap:2px;margin-left:auto;
+}
+.theme-opt{
+  padding:4px 10px;border-radius:16px;font-size:11px;font-weight:700;
+  cursor:pointer;border:none;background:none;color:var(--text3);
+  transition:all 0.2s;font-family:'Barlow',sans-serif;
+}
+.theme-opt.active{background:var(--accent);color:#fff}
+
+/* Lang pill */
+.lang-pill{
+  display:flex;background:var(--bg3);border-radius:20px;border:1px solid var(--border);
+  padding:3px;gap:2px;margin-left:auto;
+}
+.lang-opt{
+  padding:4px 8px;border-radius:16px;font-size:11px;font-weight:700;
+  cursor:pointer;border:none;background:none;color:var(--text3);
+  transition:all 0.2s;font-family:'Barlow',sans-serif;
+}
+.lang-opt.active{background:var(--blue);color:#fff}
+
+/* Logout */
+.ss-logout{
+  flex-shrink:0;padding:12px 16px 28px;border-top:1px solid var(--border);
+}
+.btn-logout{
+  height:48px;width:100%;border-radius:12px;border:1px solid rgba(239,68,68,0.4);
+  background:rgba(239,68,68,0.08);color:var(--red);
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;
+  cursor:pointer;letter-spacing:0.5px;transition:background 0.15s;
+}
+.btn-logout:hover{background:rgba(239,68,68,0.15)}
+
+/* ── MAP MODAL ── */
+.map-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:flex-end;justify-content:center}
+.map-modal-overlay.open{display:flex}
+.map-modal{width:100%;max-width:480px;background:var(--sidesheet-bg);border-radius:24px 24px 0 0;border:1px solid var(--border2);overflow:hidden;height:80vh;display:flex;flex-direction:column;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1)}
+.map-modal-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0}
+.map-modal-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800}
+.map-modal-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--bg3);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#leaflet-map{flex:1;width:100%}
+.map-modal-footer{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;background:var(--sidesheet-bg)}
+.map-info-chip{display:flex;align-items:center;gap:8px;background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:10px;border:1px solid var(--border);font-size:13px;color:var(--text2)}
+.map-info-chip strong{color:var(--text);font-weight:600}
+
+/* ── PROFILE SCREEN ── */
+.profile-header{
+  padding:52px 20px 24px;
+  background:linear-gradient(160deg,var(--accent) 0%,#c84a0f 100%);
+  flex-shrink:0;display:flex;align-items:center;gap:16px;
+}
+.profile-avatar-big{
+  width:72px;height:72px;border-radius:50%;
+  background:rgba(255,255,255,0.2);border:3px solid rgba(255,255,255,0.5);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.profile-name{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#fff;line-height:1.1}
+.profile-role{font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px}
+
+/* ── Keyframes ── */
+@keyframes pulse-map{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.5)}50%{box-shadow:0 0 0 8px rgba(59,130,246,0)}}
+@keyframes pop{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+</style>
 </head>
-
 <body>
 
-  <div class="phone-shell">
-    <div class="notch">
-      <div class="notch-cam"></div>
-    </div>
-    <div class="screen">
+<div class="phone-shell" id="phone">
+  <div class="notch"><div class="notch-cam"></div></div>
+  <div class="screen">
 
-      <!-- ═══ SCREEN 1: NOTIFICATION ═══ -->
-      <div class="slide active" id="screen-notify">
-        <div class="topbar">
+    <!-- ═══ SCREEN 1: NOTIFICATION ═══ -->
+    <div class="slide active" id="screen-notify">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="avatar-btn" onclick="openSidesheet()">JS</div>
           <div>
             <div class="topbar-title">POSPOINT <span style="color:var(--accent)">KURIER</span></div>
-            <div class="topbar-sub">Farrux • Toshkent</div>
-          </div>
-          <div class="row" style="gap:8px">
-            <div class="status-dot"></div>
-            <span class="badge green">ONLINE</span>
+            <div class="topbar-sub">Jahongir Sultonov</div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-label">Bugungi daromad</div>
-          <div class="card-title">487,000 <span style="font-size:16px;font-weight:600;color:var(--text2)">UZS</span>
+        <div class="row" style="gap:8px"><div class="status-dot"></div><span class="badge green">ONLINE</span></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Bugungi daromad</div>
+        <div class="card-title">487,000 <span style="font-size:16px;font-weight:600;color:var(--text2)">UZS</span></div>
+        <div class="card-sub">6 ta yetkazib berildi • 4.9 ★</div>
+      </div>
+      <div class="notify-overlay">
+        <div class="notify-card">
+          <div class="notify-top">
+            <div class="notify-icon">📦</div>
+            <div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:#fff">YANGI BUYURTMA</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:1px">Buyurtma #5582 • Hozir</div>
+            </div>
           </div>
-          <div class="card-sub">6 ta yetkazib berildi • 4.9 ★</div>
-        </div>
-        <!-- Overlay -->
-        <div class="notify-overlay">
-          <div class="notify-card">
-            <div class="notify-top">
-              <div class="notify-icon">📦</div>
-              <div>
-                <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:#fff">YANGI
-                  BUYURTMA</div>
-                <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:1px">Buyurtma #5582 • Hozir</div>
-              </div>
+          <div class="notify-body">
+            <div class="stat-grid">
+              <div class="stat-box"><div class="stat-val">1.2</div><div class="stat-lbl">km Restoran</div></div>
+              <div class="stat-box"><div class="stat-val">3.8</div><div class="stat-lbl">km Mijoz</div></div>
+              <div class="stat-box" style="border-color:rgba(255,107,43,0.4);background:rgba(255,107,43,0.08)"><div class="stat-val" style="color:var(--accent)">+23K</div><div class="stat-lbl">UZS Daromad</div></div>
             </div>
-            <div class="notify-body">
-              <div class="stat-grid">
-                <div class="stat-box">
-                  <div class="stat-val">1.2</div>
-                  <div class="stat-lbl">km Restoran</div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-val">3.8</div>
-                  <div class="stat-lbl">km Mijoz</div>
-                </div>
-                <div class="stat-box" style="border-color:rgba(255,107,43,0.4);background:rgba(255,107,43,0.08)">
-                  <div class="stat-val" style="color:var(--accent)">+23K</div>
-                  <div class="stat-lbl">UZS Daromad</div>
-                </div>
-              </div>
-              <div
-                style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--border)">
-                <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📍 RESTORAN</div>
-                <div style="font-size:14px;font-weight:600">Café Baraka — Mirzo Ulug'bek, 42</div>
-              </div>
-              <button class="slide-btn" onclick="goTo('screen-dashboard')">
-                ✔ &nbsp;QABUL QILISH
-              </button>
+            <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--border)">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📍 RESTORAN</div>
+              <div style="font-size:14px;font-weight:600">Café Baraka — Mirzo Ulug'bek, 42</div>
             </div>
+            <button class="slide-btn" onclick="goTo('screen-dashboard')">✔ &nbsp;QABUL QILISH</button>
           </div>
         </div>
       </div>
+      <!-- Sidesheet -->
+      <div class="sidesheet-overlay" id="ss-notify" onclick="closeSidesheet('ss-notify')">
+        <div class="sidesheet" onclick="event.stopPropagation()">SIDESHEET_CONTENT</div>
+      </div>
+    </div>
 
-      <!-- ═══ SCREEN 2: ACTIVE ORDER DASHBOARD ═══ -->
-      <div class="slide" id="screen-dashboard">
-        <div class="topbar">
+    <!-- ═══ SCREEN 2: DASHBOARD ═══ -->
+    <div class="slide" id="screen-dashboard">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="avatar-btn" onclick="openSidesheet()">JS</div>
           <div>
             <div class="topbar-title">BUYURTMA <span style="color:var(--accent)">#5582</span></div>
             <div class="topbar-sub">Qabul qilindi • 14:32</div>
           </div>
-          <span class="badge orange">RESTORANDA</span>
         </div>
-        <div class="scrollable">
-          <div style="padding:0 16px;margin-bottom:12px">
-            <div class="progress-bar">
-              <div class="progress-seg" style="background:var(--accent)"></div>
-              <div class="progress-seg" style="background:var(--border2)"></div>
-              <div class="progress-seg" style="background:var(--border2)"></div>
-            </div>
-            <div class="progress-labels">
-              <span style="color:var(--accent)">Restoranda</span>
-              <span style="color:var(--text3)">Olingan</span>
-              <span style="color:var(--text3)">Yetkazilgan</span>
-            </div>
+        <span class="badge orange">RESTORANDA</span>
+      </div>
+      <div class="scrollable">
+        <div style="padding:0 16px;margin-bottom:12px">
+          <div class="progress-bar">
+            <div class="progress-seg" style="background:var(--accent)"></div>
+            <div class="progress-seg" style="background:var(--border2)"></div>
+            <div class="progress-seg" style="background:var(--border2)"></div>
           </div>
-          <div class="earning-banner">
-            <div>
-              <div class="earning-label">TAXMINIY DAROMAD</div>
-              <div class="earning-val">23,000 UZS</div>
-            </div>
-            <div style="text-align:right">
-              <div class="earning-label">MASOFA</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800">5.0 km</div>
-            </div>
-          </div>
-          <div class="map-block" style="height:160px;flex:none;margin-bottom:12px">
-            <div class="map-road-h" style="top:40%"></div>
-            <div class="map-road-h" style="top:65%"></div>
-            <div class="map-road-v" style="left:30%"></div>
-            <div class="map-road-v" style="left:65%"></div>
-            <div class="map-pin" style="left:30%;top:42%">🍽️</div>
-            <div class="map-pulse" style="left:calc(30% - 8px);top:42%"></div>
-            <div style="position:absolute;left:25%;top:60%;font-size:11px;color:var(--text3)">Café Baraka</div>
-            <div class="map-label">📍 Mirzo Ulug'bek ko'chasi, 42 — <span
-                style="color:var(--accent);font-weight:600">1.2 km</span></div>
-          </div>
-          <div class="card" style="margin-bottom:8px">
-            <div class="card-label">Restoran manzili</div>
-            <div class="card-title" style="font-size:18px">Café Baraka</div>
-            <div class="card-sub">Mirzo Ulug'bek ko'chasi, 42 • Olmaliq, Toshkent</div>
-            <div style="margin-top:12px">
-              <button class="btn btn-ghost btn-small" style="width:100%" onclick="openMap('restaurant')">
-                🗺️ &nbsp;Xaritada ochish
-              </button>
-            </div>
+          <div class="progress-labels">
+            <span style="color:var(--accent)">Restoranda</span>
+            <span style="color:var(--text3)">Olingan</span>
+            <span style="color:var(--text3)">Yetkazilgan</span>
           </div>
         </div>
-        <div class="bottom-nav">
-          <button class="btn btn-primary" onclick="goTo('screen-pickup')">RESTORANDAMAN →</button>
+        <div class="earning-banner">
+          <div><div class="earning-label">TAXMINIY DAROMAD</div><div class="earning-val">23,000 UZS</div></div>
+          <div style="text-align:right"><div class="earning-label">MASOFA</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800">5.0 km</div></div>
+        </div>
+        <div class="map-block" style="height:160px;flex:none;margin-bottom:12px">
+          <div class="map-road-h" style="top:40%"></div>
+          <div class="map-road-h" style="top:65%"></div>
+          <div class="map-road-v" style="left:30%"></div>
+          <div class="map-road-v" style="left:65%"></div>
+          <div class="map-pin" style="left:30%;top:42%">🍽️</div>
+          <div class="map-pulse" style="left:calc(30% - 8px);top:42%"></div>
+          <div style="position:absolute;left:25%;top:60%;font-size:11px;color:var(--text3)">Café Baraka</div>
+          <div class="map-label">📍 Mirzo Ulug'bek ko'chasi, 42 — <span style="color:var(--accent);font-weight:600">1.2 km</span></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Restoran manzili</div>
+          <div class="card-title" style="font-size:18px">Café Baraka</div>
+          <div class="card-sub">Mirzo Ulug'bek ko'chasi, 42 • Olmaliq, Toshkent</div>
+          <div style="margin-top:12px">
+            <button class="btn btn-ghost btn-small" style="width:100%" onclick="openMap('restaurant')">🗺️ &nbsp;Xaritada ochish</button>
+          </div>
         </div>
       </div>
+      <div class="bottom-nav">
+        <button class="btn btn-primary" onclick="goTo('screen-pickup')">RESTORANDAMAN →</button>
+      </div>
+      <div class="sidesheet-overlay" id="ss-dashboard" onclick="closeSidesheet('ss-dashboard')">
+        <div class="sidesheet" onclick="event.stopPropagation()">SIDESHEET_CONTENT</div>
+      </div>
+    </div>
 
-      <!-- ═══ SCREEN 3: PICKUP & VERIFICATION ═══ -->
-      <div class="slide" id="screen-pickup">
-        <div class="topbar">
+    <!-- ═══ SCREEN 3: PICKUP (Faqat buyurtma tekshiruvi) ═══ -->
+    <div class="slide" id="screen-pickup">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="avatar-btn" onclick="openSidesheet()">JS</div>
           <div>
             <div class="topbar-title">BUYURTMANI <span style="color:var(--green)">TEKSHIR</span></div>
             <div class="topbar-sub">#5582 • Café Baraka</div>
           </div>
-          <span class="badge green">TEKSHIRUV</span>
         </div>
-        <div class="scrollable">
-          <div style="padding:0 16px;margin-bottom:12px">
-            <div class="progress-bar">
-              <div class="progress-seg" style="background:var(--accent)"></div>
-              <div class="progress-seg" style="background:var(--accent)"></div>
-              <div class="progress-seg" style="background:var(--border2)"></div>
-            </div>
-            <div class="progress-labels">
-              <span style="color:var(--accent)">Restoranda</span>
-              <span style="color:var(--accent)">Olingan</span>
-              <span style="color:var(--text3)">Yetkazilgan</span>
-            </div>
+        <span class="badge green">TEKSHIRUV</span>
+      </div>
+      <div class="scrollable">
+        <div style="padding:0 16px;margin-bottom:12px">
+          <div class="progress-bar">
+            <div class="progress-seg" style="background:var(--accent)"></div>
+            <div class="progress-seg" style="background:var(--accent)"></div>
+            <div class="progress-seg" style="background:var(--border2)"></div>
           </div>
-          <div class="section-title">TAOMLAR</div>
-          <div style="padding:0 16px">
-            <div class="check-item" onclick="toggleCheck(this)">
-              <div class="check-box"></div>
-              <div>
-                <div class="check-text">2× Osh (katta)</div>
-                <div class="check-sub">Asosiy taom</div>
-              </div>
-            </div>
-            <div class="check-item" onclick="toggleCheck(this)">
-              <div class="check-box"></div>
-              <div>
-                <div class="check-text">1× Shakarob salati</div>
-                <div class="check-sub">Qo'shimcha</div>
-              </div>
-            </div>
-          </div>
-          <div class="section-title" style="margin-top:12px">ICHIMLIKLAR</div>
-          <div style="padding:0 16px">
-            <div class="check-item" onclick="toggleCheck(this)">
-              <div class="check-box"></div>
-              <div>
-                <div class="check-text">1× Pepsi 1.5L</div>
-                <div class="check-sub">Sovutilgan</div>
-              </div>
-            </div>
-          </div>
-          <div class="section-title" style="margin-top:12px">QADOQLASH</div>
-          <div style="padding:0 16px">
-            <div class="check-item" onclick="toggleCheck(this)">
-              <div class="check-box"></div>
-              <div>
-                <div class="check-text">Paket &amp; Asboblar</div>
-                <div class="check-sub">Qoshiq, vilka, salfetkalar</div>
-              </div>
-            </div>
-          </div>
-          <div class="divider"></div>
-          <div style="padding:0 16px;margin-bottom:12px">
-            <div style="background:var(--bg3);border-radius:12px;padding:12px;border:1px solid var(--border)">
-              <div style="font-size:11px;color:var(--text3);margin-bottom:4px">💳 TO'LOV USULI</div>
-              <div style="font-size:15px;font-weight:600;color:var(--red)">NAQD • 131,000 UZS</div>
-            </div>
+          <div class="progress-labels">
+            <span style="color:var(--accent)">Restoranda</span>
+            <span style="color:var(--accent)">Olingan</span>
+            <span style="color:var(--text3)">Yetkazilgan</span>
           </div>
         </div>
-        <div class="bottom-nav">
-          <div id="check-warning"
-            style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--red);text-align:center">
-            Barcha bandlarni belgilang!
+        <div class="section-title">TAOMLAR</div>
+        <div style="padding:0 16px">
+          <div class="check-item" onclick="toggleCheck(this)">
+            <div class="check-box"></div>
+            <div><div class="check-text">2× Osh (katta)</div><div class="check-sub">Asosiy taom</div></div>
           </div>
-          <button class="btn btn-green" onclick="checkAllAndProceed()">BUYURTMANI OLDIM →</button>
+          <div class="check-item" onclick="toggleCheck(this)">
+            <div class="check-box"></div>
+            <div><div class="check-text">1× Shakarob salati</div><div class="check-sub">Qo'shimcha</div></div>
+          </div>
+        </div>
+        <div class="section-title" style="margin-top:12px">ICHIMLIKLAR</div>
+        <div style="padding:0 16px">
+          <div class="check-item" onclick="toggleCheck(this)">
+            <div class="check-box"></div>
+            <div><div class="check-text">1× Pepsi 1.5L</div><div class="check-sub">Sovutilgan</div></div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="padding:0 16px;margin-bottom:12px">
+          <div style="background:var(--bg3);border-radius:12px;padding:12px;border:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">💳 TO'LOV USULI</div>
+            <div style="font-size:15px;font-weight:600;color:var(--red)">NAQD • 131,000 UZS</div>
+          </div>
         </div>
       </div>
+      <div class="bottom-nav">
+        <div id="check-warning" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--red);text-align:center">Barcha bandlarni belgilang!</div>
+        <button class="btn btn-green" onclick="checkAllAndProceed()">BUYURTMANI OLDIM →</button>
+      </div>
+      <div class="sidesheet-overlay" id="ss-pickup" onclick="closeSidesheet('ss-pickup')">
+        <div class="sidesheet" onclick="event.stopPropagation()">SIDESHEET_CONTENT</div>
+      </div>
+    </div>
 
-      <!-- ═══ SCREEN 4: EN ROUTE / NAVIGATION ═══ -->
-      <div class="slide" id="screen-enroute">
-        <div class="topbar">
+    <!-- ═══ SCREEN 4: EN ROUTE ═══ -->
+    <div class="slide" id="screen-enroute">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="avatar-btn" onclick="openSidesheet()">JS</div>
           <div>
             <div class="topbar-title">YO'LDA 🚴</div>
-            <div class="topbar-sub">#5582 • Yetkazish vaqti ~18 daq</div>
-          </div>
-          <span class="badge blue">YO'LDA</span>
-        </div>
-        <div class="scrollable">
-          <div style="padding:0 16px;margin-bottom:12px">
-            <div class="progress-bar">
-              <div class="progress-seg" style="background:var(--accent)"></div>
-              <div class="progress-seg" style="background:var(--accent)"></div>
-              <div class="progress-seg" style="background:var(--accent)"></div>
-            </div>
-            <div class="progress-labels">
-              <span style="color:var(--accent)">Restoranda</span>
-              <span style="color:var(--accent)">Olingan</span>
-              <span style="color:var(--accent)">Yetkazilmoqda</span>
-            </div>
-          </div>
-          <div class="map-block" style="height:220px;flex:none;margin-bottom:12px">
-            <div class="map-road-h" style="top:30%"></div>
-            <div class="map-road-h" style="top:60%"></div>
-            <div class="map-road-h" style="top:80%"></div>
-            <div class="map-road-v" style="left:20%"></div>
-            <div class="map-road-v" style="left:55%"></div>
-            <div class="map-road-v" style="left:80%"></div>
-            <div class="map-pin" style="left:20%;top:32%">🍽️</div>
-            <div class="map-pin" style="left:80%;top:62%">🏠</div>
-            <div style="position:absolute;left:20%;top:60%;width:60%;height:1px;background:var(--accent);opacity:0.5">
-            </div>
-            <div class="map-pulse" style="left:45%;top:42%"></div>
-            <div style="position:absolute;left:40%;top:36%;font-size:10px;color:var(--accent)">📍Siz</div>
-            <div class="map-label">🏁 Chilonzor 10, 15-45 — <span style="color:var(--blue);font-weight:600">3.2 km
-                qoldi</span></div>
-          </div>
-          <div class="section-title">MIJOZ MA'LUMOTLARI</div>
-          <div style="padding:0 16px">
-            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px">
-              <div class="row between" style="margin-bottom:10px">
-                <div class="row" style="gap:10px">
-                  <div
-                    style="width:40px;height:40px;border-radius:50%;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--blue)">
-                    FA</div>
-                  <div>
-                    <div style="font-size:16px;font-weight:700">Farrux A.</div>
-                    <div style="font-size:12px;color:var(--text3)">Doimiy mijoz ★4.9</div>
-                  </div>
-                </div>
-                <button class="btn btn-ghost btn-small"
-                  style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:var(--green)"
-                  onclick="callCustomer(this)">
-                  📞 QONG'IROQ
-                </button>
-              </div>
-              <div class="info-row" style="cursor:pointer" onclick="openMap('customer')">
-                <div class="info-icon">📍</div>
-                <div style="flex:1">
-                  <div class="info-val">Chilonzor 10, kv. 15-45</div>
-                  <div class="info-sub-val">Toshkent shahri — xaritada ko'rish →</div>
-                </div>
-              </div>
-              <div class="info-row">
-                <div class="info-icon">🌳</div>
-                <div>
-                  <div class="info-val">G'ofur G'ulom bog'i yaqinida</div>
-                  <div class="info-sub-val">Mo'ljal</div>
-                </div>
-              </div>
-              <div class="info-row" style="background:rgba(255,179,71,0.08);border-color:rgba(255,179,71,0.3)">
-                <div class="info-icon">📝</div>
-                <div>
-                  <div class="info-val" style="color:var(--accent2)">Domofon: 1234</div>
-                  <div class="info-sub-val">Kuryer eslatmasi</div>
-                </div>
-              </div>
-            </div>
+            <div class="topbar-sub">#5582 • ~18 daq</div>
           </div>
         </div>
-        <div class="bottom-nav">
-          <button class="btn btn-primary" onclick="goTo('screen-payment')">MANZILGA YETDIM →</button>
+        <span class="badge blue">YO'LDA</span>
+      </div>
+      <div class="scrollable">
+        <div style="padding:0 16px;margin-bottom:12px">
+          <div class="progress-bar">
+            <div class="progress-seg" style="background:var(--accent)"></div>
+            <div class="progress-seg" style="background:var(--accent)"></div>
+            <div class="progress-seg" style="background:var(--accent)"></div>
+          </div>
+          <div class="progress-labels">
+            <span style="color:var(--accent)">Restoranda</span>
+            <span style="color:var(--accent)">Olingan</span>
+            <span style="color:var(--accent)">Yetkazilmoqda</span>
+          </div>
+        </div>
+        <div class="map-block" style="height:220px;flex:none;margin-bottom:12px">
+          <div class="map-road-h" style="top:30%"></div>
+          <div class="map-road-h" style="top:60%"></div>
+          <div class="map-road-h" style="top:80%"></div>
+          <div class="map-road-v" style="left:20%"></div>
+          <div class="map-road-v" style="left:55%"></div>
+          <div class="map-road-v" style="left:80%"></div>
+          <div class="map-pin" style="left:20%;top:32%">🍽️</div>
+          <div class="map-pin" style="left:80%;top:62%">🏠</div>
+          <div style="position:absolute;left:20%;top:60%;width:60%;height:1px;background:var(--accent);opacity:0.5"></div>
+          <div class="map-pulse" style="left:45%;top:42%"></div>
+          <div style="position:absolute;left:40%;top:36%;font-size:10px;color:var(--accent)">📍Siz</div>
+          <div class="map-label">🏁 Chilonzor 10, 15-45 — <span style="color:var(--blue);font-weight:600">3.2 km qoldi</span></div>
+        </div>
+        <div class="section-title">MIJOZ MA'LUMOTLARI</div>
+        <div style="padding:0 16px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;transition:background 0.3s">
+            <div class="row between" style="margin-bottom:10px">
+              <div class="row" style="gap:10px">
+                <div style="width:40px;height:40px;border-radius:50%;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--blue)">FA</div>
+                <div>
+                  <div style="font-size:16px;font-weight:700">Farrux A.</div>
+                  <div style="font-size:12px;color:var(--text3)">Doimiy mijoz ★4.9</div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-small" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:var(--green)" onclick="callCustomer(this)">📞 QONG'IROQ</button>
+            </div>
+            <div class="info-row" style="cursor:pointer" onclick="openMap('customer')">
+              <div class="info-icon">📍</div>
+              <div style="flex:1"><div class="info-val">Chilonzor 10, kv. 15-45</div><div class="info-sub-val">Toshkent shahri — xaritada ko'rish →</div></div>
+            </div>
+            <div class="info-row">
+              <div class="info-icon">🌳</div>
+              <div><div class="info-val">G'ofur G'ulom bog'i yaqinida</div><div class="info-sub-val">Mo'ljal</div></div>
+            </div>
+            <div class="info-row" style="background:rgba(255,179,71,0.08);border-color:rgba(255,179,71,0.3)">
+              <div class="info-icon">📝</div>
+              <div><div class="info-val" style="color:var(--accent2)">Domofon: 1234</div><div class="info-sub-val">Kuryer eslatmasi</div></div>
+            </div>
+          </div>
         </div>
       </div>
+      <div class="bottom-nav">
+        <button class="btn btn-primary" onclick="goTo('screen-payment')">MANZILGA YETDIM →</button>
+      </div>
+      <div class="sidesheet-overlay" id="ss-enroute" onclick="closeSidesheet('ss-enroute')">
+        <div class="sidesheet" onclick="event.stopPropagation()">SIDESHEET_CONTENT</div>
+      </div>
+    </div>
 
-      <!-- ═══ SCREEN 5: PAYMENT ═══ -->
-      <div class="slide" id="screen-payment">
-        <div class="topbar">
+    <!-- ═══ SCREEN 5: PAYMENT ═══ -->
+    <div class="slide" id="screen-payment">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="avatar-btn" onclick="openSidesheet()">JS</div>
           <div>
-            <div class="topbar-title">TO'LOV <span style="color:var(--text2)">#5582</span></div>
+            <div class="topbar-title">BUYURTMA <span style="color:var(--accent)">#5582</span></div>
             <div class="topbar-sub">Yakunlash bosqichi</div>
           </div>
-          <span class="badge green">YETKAZILDI</span>
         </div>
-        <div class="scrollable">
-          <div class="toggle-row" style="margin-top:8px">
-            <button class="toggle-btn active" id="pay-cash-btn" onclick="setPayType('cash')">💵 NAQD</button>
-            <button class="toggle-btn" id="pay-paid-btn" onclick="setPayType('paid')">✅ TO'LANGAN</button>
-          </div>
-          <div id="pay-cash">
-            <div class="pay-big cash">
-              <div class="pay-big-label">⚠ MIJOZDAN OLING</div>
-              <div class="pay-big-amount">131,000</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--red)">UZS
-                NAQD</div>
-              <div class="pay-big-sub" style="margin-top:8px">Pulni qabul qilib, tasdiqlang</div>
+        <span class="badge green">YETKAZILDI</span>
+      </div>
+      <div class="scrollable">
+        <div style="margin:12px 16px 0;padding:16px;border-radius:16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25)">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--red);margin-bottom:6px">⚠ TO'LOV TURI — NAQD</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;color:var(--red);line-height:1">131,000 UZS</div>
+          <div style="font-size:13px;color:rgba(239,68,68,0.7);margin-top:6px">Mijozdan naqd pul qabul qiling</div>
+        </div>
+        <div style="padding:12px 16px 0">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:background 0.3s">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">BUYURTMA MA'LUMOTLARI</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--accent)">#5582</div>
             </div>
-          </div>
-          <div id="pay-paid" style="display:none">
-            <div class="pay-big paid">
-              <div class="pay-big-label">✓ TO'LOV TASDIQLANGAN</div>
-              <div class="pay-big-amount" style="font-size:32px">ONLAYN</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--green)">
-                TO'LANDI</div>
-              <div class="pay-big-sub" style="margin-top:8px">PUL OLMANG — Karta orqali to'langan</div>
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+              <div style="font-size:18px">🍽️</div>
+              <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">RESTORAN</div><div style="font-size:14px;font-weight:600">Café Baraka</div><div style="font-size:12px;color:var(--text2)">Mirzo Ulug'bek ko'chasi, 42</div></div>
             </div>
-          </div>
-          <div style="padding:0 16px">
-            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px">
-              <div
-                style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">
-                BUYURTMA TARKIBI</div>
-              <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span
-                  style="color:var(--text2)">2× Osh</span><span>90,000</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span
-                  style="color:var(--text2)">1× Shakarob</span><span>21,000</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span
-                  style="color:var(--text2)">1× Pepsi 1.5L</span><span>15,000</span></div>
-              <div style="height:1px;background:var(--border);margin:10px 0"></div>
-              <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700">
-                <span>JAMI</span><span>131,000 UZS</span></div>
-            </div>
-          </div>
-          <div style="padding:12px 16px">
-            <div
-              style="background:rgba(255,107,43,0.06);border:1px solid rgba(255,107,43,0.2);border-radius:12px;padding:12px">
-              <div style="font-size:11px;color:var(--text3);margin-bottom:4px">💰 SIZNING DAROMADINGIZ</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--accent)">
-                +23,000 UZS</div>
+            <div style="padding:10px 14px;display:flex;align-items:center;gap:10px">
+              <div style="font-size:18px">📍</div>
+              <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">YETKAZISH MANZILI</div><div style="font-size:14px;font-weight:600">Chilonzor 10, kv. 15-45</div><div style="font-size:12px;color:var(--text2)">Mo'ljal: G'ofur G'ulom bog'i • Domofon: 1234</div></div>
             </div>
           </div>
         </div>
-        <div class="bottom-nav">
-          <button class="btn btn-green" onclick="goTo('screen-done')">YAKUNLASH ✓</button>
+        <div style="padding:10px 16px 0">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:background 0.3s">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">BUYURTMA TARKIBI</div>
+            </div>
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:14px;font-weight:500">2× Osh (katta)</div><div style="font-size:12px;color:var(--text3)">Asosiy taom</div></div>
+              <div style="font-size:15px;font-weight:700">90,000</div>
+            </div>
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:14px;font-weight:500">1× Shakarob salati</div><div style="font-size:12px;color:var(--text3)">Qo'shimcha</div></div>
+              <div style="font-size:15px;font-weight:700">21,000</div>
+            </div>
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:14px;font-weight:500">1× Pepsi 1.5L</div><div style="font-size:12px;color:var(--text3)">Sovutilgan</div></div>
+              <div style="font-size:15px;font-weight:700">15,000</div>
+            </div>
+            <div style="padding:12px 14px;background:var(--bg3);display:flex;justify-content:space-between;align-items:center;transition:background 0.3s">
+              <div style="font-size:13px;font-weight:700;color:var(--text2)">JAMI</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900">131,000 UZS</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 16px 16px">
+          <div style="background:rgba(255,107,43,0.06);border:1px solid rgba(255,107,43,0.2);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:13px;color:var(--text3)">💰 Sizning daromadingiz</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--accent)">+23,000 UZS</div>
+          </div>
         </div>
       </div>
-
-      <!-- ═══ SCREEN 6: DONE ═══ -->
-      <div class="slide" id="screen-done">
-        <div
-          style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center">
-          <div class="done-icon">✓</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;margin-bottom:8px">
-            YETKAZILDI!</div>
-          <div style="color:var(--text2);font-size:15px;margin-bottom:28px">Buyurtma #5582 muvaffaqiyatli yakunlandi
-          </div>
-          <div
-            style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;width:100%;margin-bottom:24px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div class="stat-box">
-                <div class="stat-val" style="color:var(--accent)">23K</div>
-                <div class="stat-lbl">UZS Daromad</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-val" style="color:var(--green)">4.9</div>
-                <div class="stat-lbl">Reyting</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-val">18</div>
-                <div class="stat-lbl">daqiqa</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-val">5.0</div>
-                <div class="stat-lbl">km</div>
-              </div>
-            </div>
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="goTo('screen-notify')">YANGI BUYURTMA →</button>
-        </div>
+      <div class="bottom-nav">
+        <button class="btn btn-green" onclick="goTo('screen-done')">YAKUNLASH ✓</button>
       </div>
-
-    </div><!-- /screen -->
-  </div><!-- /phone-shell -->
-
-  <!-- Step dots -->
-  <div class="step-dots" id="step-dots">
-    <div class="dot" data-screen="screen-notify" style="width:28px;background:var(--accent)"></div>
-    <div class="dot" data-screen="screen-dashboard" style="width:6px;background:var(--border2)"></div>
-    <div class="dot" data-screen="screen-pickup" style="width:6px;background:var(--border2)"></div>
-    <div class="dot" data-screen="screen-enroute" style="width:6px;background:var(--border2)"></div>
-    <div class="dot" data-screen="screen-payment" style="width:6px;background:var(--border2)"></div>
-    <div class="dot" data-screen="screen-done" style="width:6px;background:var(--border2)"></div>
-  </div>
-
-  <!-- ═══ MAP MODAL (Leaflet + OpenStreetMap) ═══ -->
-  <div class="map-modal-overlay" id="map-modal-overlay" onclick="closeMapModal(event)">
-    <div class="map-modal">
-      <div class="map-modal-header">
-        <div>
-          <div class="map-modal-title" id="map-modal-title">📍 Restoran manzili</div>
-        </div>
-        <button class="map-modal-close" onclick="closeMapModalBtn()">✕</button>
+      <div class="sidesheet-overlay" id="ss-payment" onclick="closeSidesheet('ss-payment')">
+        <div class="sidesheet" onclick="event.stopPropagation()">SIDESHEET_CONTENT</div>
       </div>
-      <div id="leaflet-map"></div>
-      <div class="map-modal-footer">
-        <div class="map-info-chip" id="map-address-chip">
-          📍 <strong>Café Baraka</strong> — Mirzo Ulug'bek ko'chasi, 42
+    </div>
+
+    <!-- ═══ SCREEN 6: DONE ═══ -->
+    <div class="slide" id="screen-done">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center">
+        <div class="done-icon">✓</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;margin-bottom:8px">YETKAZILDI!</div>
+        <div style="color:var(--text2);font-size:15px;margin-bottom:28px">Buyurtma #5582 muvaffaqiyatli yakunlandi</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;width:100%;margin-bottom:24px;transition:background 0.3s">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="stat-box"><div class="stat-val" style="color:var(--accent)">23K</div><div class="stat-lbl">UZS Daromad</div></div>
+            <div class="stat-box"><div class="stat-val" style="color:var(--green)">4.9</div><div class="stat-lbl">Reyting</div></div>
+            <div class="stat-box"><div class="stat-val">18</div><div class="stat-lbl">daqiqa</div></div>
+            <div class="stat-box"><div class="stat-val">5.0</div><div class="stat-lbl">km</div></div>
+          </div>
         </div>
-        <div style="display:flex;gap:8px">
-          <a id="map-osm-link" href="#" target="_blank" rel="noopener"
-            style="flex:1;height:44px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-decoration:none;gap:6px">
-            🗺️ OpenStreetMap
-          </a>
-          <a id="map-google-link" href="#" target="_blank" rel="noopener"
-            style="flex:1;height:44px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-decoration:none;gap:6px">
-            🔵 Google Maps
-          </a>
-        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="goTo('screen-notify')">YANGI BUYURTMA →</button>
+      </div>
+      <div class="sidesheet-overlay" id="ss-done" onclick="closeSidesheet('ss-done')">
+        <div class="sidesheet" onclick="event.stopPropagation()">SIDESHEET_CONTENT</div>
+      </div>
+    </div>
+
+  </div><!-- /screen -->
+</div><!-- /phone-shell -->
+
+<div class="step-dots" id="step-dots">
+  <div class="dot" data-screen="screen-notify" style="width:28px;background:var(--accent)"></div>
+  <div class="dot" data-screen="screen-dashboard" style="width:6px;background:var(--border2)"></div>
+  <div class="dot" data-screen="screen-pickup" style="width:6px;background:var(--border2)"></div>
+  <div class="dot" data-screen="screen-enroute" style="width:6px;background:var(--border2)"></div>
+  <div class="dot" data-screen="screen-payment" style="width:6px;background:var(--border2)"></div>
+  <div class="dot" data-screen="screen-done" style="width:6px;background:var(--border2)"></div>
+</div>
+
+<!-- MAP MODAL -->
+<div class="map-modal-overlay" id="map-modal-overlay" onclick="closeMapModal(event)">
+  <div class="map-modal">
+    <div class="map-modal-header">
+      <div class="map-modal-title" id="map-modal-title">📍 Restoran manzili</div>
+      <button class="map-modal-close" onclick="closeMapModalBtn()">✕</button>
+    </div>
+    <div id="leaflet-map"></div>
+    <div class="map-modal-footer">
+      <div class="map-info-chip" id="map-address-chip">📍 <strong>Café Baraka</strong> — Mirzo Ulug'bek ko'chasi, 42</div>
+      <div style="display:flex;gap:8px">
+        <a id="map-osm-link" href="#" target="_blank" rel="noopener" style="flex:1;height:44px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-decoration:none;gap:6px">🗺️ OpenStreetMap</a>
+        <a id="map-google-link" href="#" target="_blank" rel="noopener" style="flex:1;height:44px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-decoration:none;gap:6px">🔵 Google Maps</a>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
-    let current = 'screen-notify';
-    let leafletMap = null;
-    let leafletMarker = null;
+<script>
+// ── State ──
+var current = 'screen-notify';
+var currentTheme = 'dark';
+var currentLang = 'uz';
+var leafletMap = null;
+var leafletMarker = null;
 
-    /* ── Manzillar ma'lumotlari ── */
-    const LOCATIONS = {
-      restaurant: {
-        lat: 41.3165,
-        lng: 69.2401,
-        name: 'Café Baraka',
-        address: "Mirzo Ulug'bek ko'chasi, 42, Toshkent",
-        color: '#FF6B2B',
-        emoji: '🍽️'
-      },
-      customer: {
-        lat: 41.2995,
-        lng: 69.2167,
-        name: 'Farrux A. (Mijoz)',
-        address: "Chilonzor 10, kv. 15-45, Toshkent",
-        color: '#3B82F6',
-        emoji: '🏠'
-      }
-    };
+var LOCATIONS = {
+  restaurant:{lat:41.3165,lng:69.2401,name:'Café Baraka',address:"Mirzo Ulug'bek ko'chasi, 42, Toshkent",color:'#FF6B2B',emoji:'🍽️'},
+  customer:{lat:41.2995,lng:69.2167,name:'Farrux A. (Mijoz)',address:"Chilonzor 10, kv. 15-45, Toshkent",color:'#3B82F6',emoji:'🏠'}
+};
 
-    function openMap(locKey) {
-      var loc = LOCATIONS[locKey] || LOCATIONS.restaurant;
+// ── Sidesheet HTML builder ──
+function buildSidesheetHTML() {
+  var themeLabel = currentTheme === 'dark' ? '🌙 Dark' : '☀️ Light';
+  return '<div class="ss-profile">'
+    + '<div class="ss-avatar">JS</div>'
+    + '<div class="ss-name">Sultonov Jahongir Bahodir o\'g\'li</div>'
+    + '<div class="ss-car">🚗 Lacetti • 01 A 001 BB</div>'
+    + '</div>'
 
-      /* Modal header va address */
-      document.getElementById('map-modal-title').textContent = loc.emoji + ' ' + loc.name;
-      document.getElementById('map-address-chip').innerHTML =
-        '📍 <strong>' + loc.name + '</strong> — ' + loc.address;
+    + '<div style="padding:12px 16px 0">'
+    + '<div class="ss-balance">'
+    + '<div class="ss-balance-label">Joriy balans</div>'
+    + '<div class="ss-balance-val">1,250,000 UZS</div>'
+    + '<div class="ss-stats-grid">'
+    + '<div class="ss-stat"><div class="ss-stat-val">247</div><div class="ss-stat-lbl">Buyurtmalar</div></div>'
+    + '<div class="ss-stat"><div class="ss-stat-val" style="font-size:14px">34.7M</div><div class="ss-stat-lbl">Umumiy summa</div></div>'
+    + '</div>'
+    + '</div>'
+    + '</div>'
 
-      /* Tashqi havolalar */
-      var osmUrl = 'https://www.openstreetmap.org/?mlat=' + loc.lat + '&mlon=' + loc.lng + '&zoom=16';
-      var gUrl = 'https://www.google.com/maps/search/?api=1&query=' + loc.lat + ',' + loc.lng;
-      document.getElementById('map-osm-link').href = osmUrl;
-      document.getElementById('map-google-link').href = gUrl;
+    + '<div class="ss-menu">'
 
-      /* Modalni ochish */
-      var overlay = document.getElementById('map-modal-overlay');
-      overlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
+    + '<div class="ss-section-label">PROFIL</div>'
+    + '<button class="ss-item" onclick="openProfile()">'
+    + '<div class="ss-item-icon">👤</div>'
+    + '<div><div class="ss-item-text">Mening profilim</div><div class="ss-item-sub">Sultonov Jahongir</div></div>'
+    + '<div class="ss-item-right">›</div>'
+    + '</button>'
 
-      /* Leaflet xaritani yaratish yoki yangilash */
-      setTimeout(function () {
-        if (!leafletMap) {
-          leafletMap = L.map('leaflet-map', {
-            center: [loc.lat, loc.lng],
-            zoom: 16,
-            zoomControl: true,
-            attributionControl: true
-          });
+    + '<div class="ss-divider"></div>'
+    + '<div class="ss-section-label">KO\'RINISH</div>'
 
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
-            maxZoom: 19
-          }).addTo(leafletMap);
-        } else {
-          leafletMap.setView([loc.lat, loc.lng], 16);
-          if (leafletMarker) {
-            leafletMap.removeLayer(leafletMarker);
-          }
-        }
+    + '<div class="ss-item" style="cursor:default">'
+    + '<div class="ss-item-icon">🎨</div>'
+    + '<div><div class="ss-item-text">Mavzu</div></div>'
+    + '<div class="theme-pill">'
+    + '<button class="theme-opt ' + (currentTheme==='light'?'active':'') + '" onclick="setTheme(\'light\')">☀️</button>'
+    + '<button class="theme-opt ' + (currentTheme==='dark'?'active':'') + '" onclick="setTheme(\'dark\')">🌙</button>'
+    + '</div>'
+    + '</div>'
 
-        /* Custom marker */
-        var markerIcon = L.divIcon({
-          className: '',
-          html: '<div style="background:' + loc.color + ';width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:16px;display:block;text-align:center;line-height:30px">' + loc.emoji + '</span></div>',
-          iconSize: [36, 36],
-          iconAnchor: [18, 36]
-        });
+    + '<div class="ss-item" style="cursor:default">'
+    + '<div class="ss-item-icon">🌐</div>'
+    + '<div><div class="ss-item-text">Til</div></div>'
+    + '<div class="lang-pill">'
+    + '<button class="lang-opt ' + (currentLang==='uz'?'active':'') + '" onclick="setLang(\'uz\')">UZ</button>'
+    + '<button class="lang-opt ' + (currentLang==='ru'?'active':'') + '" onclick="setLang(\'ru\')">RU</button>'
+    + '</div>'
+    + '</div>'
 
-        leafletMarker = L.marker([loc.lat, loc.lng], { icon: markerIcon })
-          .addTo(leafletMap)
-          .bindPopup('<strong>' + loc.name + '</strong><br>' + loc.address)
-          .openPopup();
+    + '<div class="ss-divider"></div>'
+    + '<div class="ss-section-label">SOZLAMALAR</div>'
+    + '<button class="ss-item">'
+    + '<div class="ss-item-icon">🔔</div>'
+    + '<div><div class="ss-item-text">Bildirishnomalar</div><div class="ss-item-sub">Yoqilgan</div></div>'
+    + '<div class="ss-item-right">›</div>'
+    + '</button>'
+    + '<button class="ss-item">'
+    + '<div class="ss-item-icon">🔒</div>'
+    + '<div><div class="ss-item-text">Xavfsizlik</div><div class="ss-item-sub">PIN kod</div></div>'
+    + '<div class="ss-item-right">›</div>'
+    + '</button>'
+    + '<button class="ss-item">'
+    + '<div class="ss-item-icon">❓</div>'
+    + '<div><div class="ss-item-text">Yordam</div><div class="ss-item-sub">Qo\'llab-quvvatlash</div></div>'
+    + '<div class="ss-item-right">›</div>'
+    + '</button>'
+    + '</div>'
 
-        leafletMap.invalidateSize();
-      }, 100);
-    }
+    + '<div class="ss-logout">'
+    + '<button class="btn-logout" onclick="doLogout()">🚪 &nbsp;CHIQISH (LOGOUT)</button>'
+    + '</div>';
+}
 
-    function closeMapModal(e) {
-      if (e.target === document.getElementById('map-modal-overlay')) {
-        closeMapModalBtn();
-      }
-    }
+// ── Sidesheet open/close ──
+function openSidesheet() {
+  var ssIds = ['ss-notify','ss-dashboard','ss-pickup','ss-enroute','ss-payment','ss-done'];
+  ssIds.forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.querySelector('.sidesheet').innerHTML = buildSidesheetHTML();
+  });
+  var activeOverlay = document.getElementById('ss-' + current.replace('screen-',''));
+  if (activeOverlay) activeOverlay.classList.add('open');
+}
 
-    function closeMapModalBtn() {
-      document.getElementById('map-modal-overlay').classList.remove('open');
-      document.body.style.overflow = '';
-    }
+function closeSidesheet(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
 
-    function goTo(id) {
-      const prev = document.getElementById(current);
-      const next = document.getElementById(id);
-      prev.classList.remove('active');
-      prev.classList.add('exit');
-      next.classList.add('active');
-      setTimeout(function () { prev.classList.remove('exit'); }, 450);
-      current = id;
-      updateDots();
-    }
+function closeAllSidesheets() {
+  var ssIds = ['ss-notify','ss-dashboard','ss-pickup','ss-enroute','ss-payment','ss-done'];
+  ssIds.forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  });
+}
 
-    function updateDots() {
-      document.querySelectorAll('.dot').forEach(function (d) {
-        var isActive = d.dataset.screen === current;
-        d.style.width = isActive ? '28px' : '6px';
-        d.style.background = isActive ? 'var(--accent)' : 'var(--border2)';
-      });
-    }
+// ── Theme ──
+function setTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  // Re-render open sidesheet
+  var ssIds = ['ss-notify','ss-dashboard','ss-pickup','ss-enroute','ss-payment','ss-done'];
+  ssIds.forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.querySelector('.sidesheet').innerHTML = buildSidesheetHTML();
+  });
+}
 
-    function toggleCheck(el) {
-      el.classList.toggle('checked');
-      var box = el.querySelector('.check-box');
-      box.textContent = el.classList.contains('checked') ? '✓' : '';
-      document.getElementById('check-warning').style.display = 'none';
-    }
+// ── Language ──
+function setLang(lang) {
+  currentLang = lang;
+  var ssIds = ['ss-notify','ss-dashboard','ss-pickup','ss-enroute','ss-payment','ss-done'];
+  ssIds.forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.querySelector('.sidesheet').innerHTML = buildSidesheetHTML();
+  });
+}
 
-    function checkAllAndProceed() {
-      var items = document.querySelectorAll('.check-item');
-      var allChecked = true;
-      items.forEach(function (i) { if (!i.classList.contains('checked')) allChecked = false; });
-      if (!allChecked) {
-        document.getElementById('check-warning').style.display = 'block';
-        return;
-      }
-      goTo('screen-enroute');
-    }
+// ── Profile screen ──
+function openProfile() {
+  closeAllSidesheets();
+  goTo('screen-profile');
+}
 
-    function setPayType(type) {
-      if (type === 'cash') {
-        document.getElementById('pay-cash').style.display = 'block';
-        document.getElementById('pay-paid').style.display = 'none';
-        document.getElementById('pay-cash-btn').classList.add('active');
-        document.getElementById('pay-paid-btn').classList.remove('active');
-      } else {
-        document.getElementById('pay-cash').style.display = 'none';
-        document.getElementById('pay-paid').style.display = 'block';
-        document.getElementById('pay-cash-btn').classList.remove('active');
-        document.getElementById('pay-paid-btn').classList.add('active');
-      }
-    }
+// ── Logout ──
+function doLogout() {
+  closeAllSidesheets();
+  alert('Tizimdan chiqildi!');
+}
 
-    function callCustomer(btn) {
-      btn.style.background = 'rgba(34,197,94,0.2)';
-      btn.textContent = "📞 Qo'ng'iroq...";
-      setTimeout(function () {
-        btn.style.background = 'rgba(34,197,94,0.1)';
-        btn.textContent = "📞 QONG'IROQ";
-      }, 2000);
-    }
-  </script>
+// ── Navigation ──
+function goTo(id) {
+  var prev = document.getElementById(current);
+  var next = document.getElementById(id);
+  if (!next) return;
+  prev.classList.remove('active');
+  prev.classList.add('exit');
+  next.classList.add('active');
+  setTimeout(function(){ prev.classList.remove('exit'); }, 450);
+  current = id;
+  updateDots();
+}
+
+function updateDots() {
+  document.querySelectorAll('.dot').forEach(function(d){
+    var isActive = d.dataset.screen === current;
+    d.style.width = isActive ? '28px' : '6px';
+    d.style.background = isActive ? 'var(--accent)' : 'var(--border2)';
+  });
+}
+
+// ── Checklist ──
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  var box = el.querySelector('.check-box');
+  box.textContent = el.classList.contains('checked') ? '✓' : '';
+  document.getElementById('check-warning').style.display = 'none';
+}
+
+function checkAllAndProceed() {
+  var items = document.querySelectorAll('.check-item');
+  var allChecked = true;
+  items.forEach(function(i){ if (!i.classList.contains('checked')) allChecked = false; });
+  if (!allChecked){ document.getElementById('check-warning').style.display='block'; return; }
+  goTo('screen-enroute');
+}
+
+// ── Call customer ──
+function callCustomer(btn) {
+  btn.style.background = 'rgba(34,197,94,0.2)';
+  btn.textContent = "📞 Qo'ng'iroq...";
+  setTimeout(function(){
+    btn.style.background = 'rgba(34,197,94,0.1)';
+    btn.textContent = "📞 QONG'IROQ";
+  }, 2000);
+}
+
+// ── Leaflet map ──
+function loadLeaflet(callback) {
+  if (window.L){ callback(); return; }
+  var script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = callback;
+  script.onerror = function(){ alert("Xarita yuklanmadi. Internet aloqasini tekshiring."); };
+  document.head.appendChild(script);
+}
+
+function initMap(loc) {
+  if (!leafletMap) {
+    leafletMap = L.map('leaflet-map',{center:[loc.lat,loc.lng],zoom:16});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(leafletMap);
+  } else {
+    leafletMap.setView([loc.lat,loc.lng],16);
+    if (leafletMarker) leafletMap.removeLayer(leafletMarker);
+  }
+  var icon = L.divIcon({className:'',html:'<div style="background:'+loc.color+';width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:16px;display:block;text-align:center;line-height:30px">'+loc.emoji+'</span></div>',iconSize:[36,36],iconAnchor:[18,36]});
+  leafletMarker = L.marker([loc.lat,loc.lng],{icon:icon}).addTo(leafletMap).bindPopup('<strong>'+loc.name+'</strong><br>'+loc.address).openPopup();
+  leafletMap.invalidateSize();
+}
+
+function openMap(locKey) {
+  var loc = LOCATIONS[locKey] || LOCATIONS.restaurant;
+  document.getElementById('map-modal-title').textContent = loc.emoji+' '+loc.name;
+  document.getElementById('map-address-chip').innerHTML = '📍 <strong>'+loc.name+'</strong> — '+loc.address;
+  document.getElementById('map-osm-link').href = 'https://www.openstreetmap.org/?mlat='+loc.lat+'&mlon='+loc.lng+'&zoom=16';
+  document.getElementById('map-google-link').href = 'https://www.google.com/maps/search/?api=1&query='+loc.lat+','+loc.lng;
+  document.getElementById('map-modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  loadLeaflet(function(){ setTimeout(function(){ initMap(loc); },150); });
+}
+
+function closeMapModal(e) {
+  if (e.target===document.getElementById('map-modal-overlay')) closeMapModalBtn();
+}
+function closeMapModalBtn() {
+  document.getElementById('map-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── Profile screen builder (injected dynamically) ──
+function openProfile() {
+  closeAllSidesheets();
+  // Inject profile screen if not exists
+  var existing = document.getElementById('screen-profile');
+  if (!existing) {
+    var div = document.createElement('div');
+    div.className = 'slide';
+    div.id = 'screen-profile';
+    div.innerHTML = '<div class="profile-header">'
+      + '<button onclick="goTo(\''+current+'\')" style="background:rgba(255,255,255,0.2);border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0">‹</button>'
+      + '<div class="profile-avatar-big">JS</div>'
+      + '<div><div class="profile-name">Sultonov Jahongir<br>Bahodir o\'g\'li</div><div class="profile-role">Pospoint Kurier • ID #1042</div></div>'
+      + '</div>'
+      + '<div class="scrollable">'
+
+      // Car info
+      + '<div style="padding:16px 16px 0">'
+      + '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:background 0.3s">'
+      + '<div style="padding:12px 14px;border-bottom:1px solid var(--border)"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">AVTOMOBIL</div></div>'
+      + '<div style="padding:14px;display:flex;align-items:center;gap:14px">'
+      + '<div style="font-size:36px">🚗</div>'
+      + '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:800">Chevrolet Lacetti</div>'
+      + '<div style="font-size:13px;color:var(--text2);margin-top:2px">Davlat raqami</div>'
+      + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:700;color:var(--accent);margin-top:2px">01 A 001 BB</div></div>'
+      + '</div></div></div>'
+
+      // Balance
+      + '<div style="padding:10px 16px 0">'
+      + '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:background 0.3s">'
+      + '<div style="padding:12px 14px;border-bottom:1px solid var(--border)"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">BALANS</div></div>'
+      + '<div style="padding:16px 14px;display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:13px;color:var(--text2)">Joriy balans</div>'
+      + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:var(--green)">1,250,000 UZS</div>'
+      + '</div></div></div>'
+
+      // Stats
+      + '<div style="padding:10px 16px 0">'
+      + '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:background 0.3s">'
+      + '<div style="padding:12px 14px;border-bottom:1px solid var(--border)"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">STATISTIKA</div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)">'
+      + '<div style="background:var(--bg2);padding:16px 14px;transition:background 0.3s"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">JAMI BUYURTMALAR</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:var(--accent)">247</div><div style="font-size:11px;color:var(--text3)">ta yetkazildi</div></div>'
+      + '<div style="background:var(--bg2);padding:16px 14px;transition:background 0.3s"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">UMUMIY SUMMA</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:var(--blue)">34.7M</div><div style="font-size:11px;color:var(--text3)">UZS</div></div>'
+      + '<div style="background:var(--bg2);padding:16px 14px;transition:background 0.3s"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">O\'RTACHA REYTING</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:var(--green)">4.9 ★</div></div>'
+      + '<div style="background:var(--bg2);padding:16px 14px;transition:background 0.3s"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">BU OY</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900">38</div><div style="font-size:11px;color:var(--text3)">ta buyurtma</div></div>'
+      + '</div></div></div>'
+
+      + '<div style="height:24px"></div>'
+      + '</div>'<!-- /scrollable -->
+
+      + '<div class="bottom-nav">'
+      + '<button class="btn btn-ghost" onclick="goTo(\'screen-notify\')">‹ Orqaga</button>'
+      + '</div>'
+
+      + '<div class="sidesheet-overlay" id="ss-profile" onclick="closeSidesheet(\'ss-profile\')">'
+      + '<div class="sidesheet" onclick="event.stopPropagation()"></div>'
+      + '</div>';
+
+    document.querySelector('.screen').appendChild(div);
+  }
+  goTo('screen-profile');
+}
+</script>
 </body>
-
 </html>
