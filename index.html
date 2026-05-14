@@ -554,6 +554,52 @@ body{background:var(--body-bg);font-family:'Barlow',sans-serif;color:var(--text)
       </div>
     </div>
 
+    <!-- ══ SCREEN: MAP — bottom sheet ══ -->
+    <div class="slide" id="s-map" style="background:transparent;pointer-events:none">
+      <!-- qorong'i fon -->
+      <div id="map-backdrop" onclick="closeMapScreen()"
+        style="position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .35s;pointer-events:none"></div>
+      <!-- bottom sheet panel -->
+      <div id="map-sheet"
+        style="position:absolute;bottom:0;left:0;right:0;height:88%;
+               background:var(--bg);border-radius:22px 22px 0 0;
+               display:flex;flex-direction:column;overflow:hidden;
+               transform:translateY(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+               box-shadow:0 -8px 40px rgba(0,0,0,.35);pointer-events:all">
+        <!-- Handle -->
+        <div style="display:flex;justify-content:center;padding:10px 0 4px;flex-shrink:0">
+          <div style="width:36px;height:4px;border-radius:2px;background:var(--border2)"></div>
+        </div>
+        <!-- Header -->
+        <div style="padding:4px 16px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <button onclick="closeMapScreen()"
+              style="width:32px;height:32px;border-radius:50%;border:none;background:var(--bg3);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+            <div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800" id="map-sheet-title">📍 Manzil</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:1px" id="map-sheet-sub"></div>
+            </div>
+          </div>
+          <span class="bdg bdg-b" id="map-sheet-badge">MANZIL</span>
+        </div>
+        <!-- Leaflet map -->
+        <div id="leaflet-map" style="flex:1;width:100%;min-height:0"></div>
+        <!-- Footer -->
+        <div style="padding:10px 14px 24px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0">
+          <div style="display:flex;gap:8px">
+            <a id="osmlink" href="#" target="_blank" rel="noopener"
+              class="btn btn-a" style="text-decoration:none;font-size:13px;height:42px">
+              🗺️ &nbsp;OpenStreetMap
+            </a>
+            <a id="gmlink" href="#" target="_blank" rel="noopener"
+              class="btn btn-gh" style="text-decoration:none;font-size:13px;height:42px">
+              🔵 &nbsp;Google Maps
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /screen -->
 
 </div><!-- /phone -->
@@ -564,30 +610,6 @@ body{background:var(--body-bg);font-family:'Barlow',sans-serif;color:var(--text)
   <div class="dot" data-s="s-enroute" style="width:6px;background:var(--border2)"></div>
   <div class="dot" data-s="s-payment" style="width:6px;background:var(--border2)"></div>
   <div class="dot" data-s="s-done" style="width:6px;background:var(--border2)"></div>
-</div>
-
-<!-- MAP MODAL — body da, phone tashqarisida -->
-<div class="mapo" id="mapo" onclick="closeMap(event)">
-  <div class="mapm">
-    <div class="maph">
-      <div class="mapti" id="mapti">📍 Manzil</div>
-      <button class="mapcl" onclick="closeMapBtn()">✕</button>
-    </div>
-    <div id="leaflet-map"></div>
-    <div class="mapf">
-      <div class="mapch" id="mapch">📍 <strong>Manzil</strong></div>
-      <div style="display:flex;gap:7px">
-        <a id="osmlink" href="#" target="_blank" rel="noopener"
-          style="flex:1;height:40px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;text-decoration:none;gap:5px">
-          🗺️ OpenStreetMap
-        </a>
-        <a id="gmlink" href="#" target="_blank" rel="noopener"
-          style="flex:1;height:40px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;text-decoration:none;gap:5px">
-          🔵 Google Maps
-        </a>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -741,14 +763,10 @@ function loadLeaflet(cb) {
 }
 
 function initMap(loc) {
-  /* Har safar yangi map yaratamiz — tile muammosini oldini oladi */
-  if (lMap) {
-    lMap.remove();
-    lMap = null;
-    lMark = null;
-  }
-  document.getElementById('leaflet-map').innerHTML = '';
-  lMap = L.map('leaflet-map', {center:[loc.lat,loc.lng], zoom:16});
+  if (lMap) { lMap.remove(); lMap = null; lMark = null; }
+  var el = document.getElementById('leaflet-map');
+  el.innerHTML = '';
+  lMap = L.map(el, {center:[loc.lat,loc.lng], zoom:16});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     {attribution:'© OpenStreetMap', maxZoom:19}).addTo(lMap);
   var icon = L.divIcon({className:'',
@@ -758,28 +776,56 @@ function initMap(loc) {
     .addTo(lMap)
     .bindPopup('<strong>'+loc.name+'</strong><br>'+loc.addr)
     .openPopup();
-  setTimeout(function(){ lMap.invalidateSize(); }, 100);
+  /* sheet animatsiyasi tugagandan keyin invalidateSize */
+  setTimeout(function(){ lMap.invalidateSize(); }, 420);
 }
 
 function openMap(key) {
   var loc = LOCS[key] || LOCS.restaurant;
-  document.getElementById('mapti').textContent = loc.ico+' '+loc.name;
-  document.getElementById('mapch').innerHTML = '📍 <strong>'+loc.name+'</strong> — '+loc.addr;
+  var badges = {restaurant:'RESTORAN', customer:'MIJOZ'};
+
+  /* Ma'lumotlarni to'ldirish */
+  document.getElementById('map-sheet-title').textContent = loc.ico + ' ' + loc.name;
+  document.getElementById('map-sheet-sub').textContent = loc.addr;
+  document.getElementById('map-sheet-badge').textContent = badges[key] || 'MANZIL';
   document.getElementById('osmlink').href = 'https://www.openstreetmap.org/?mlat='+loc.lat+'&mlon='+loc.lng+'&zoom=16';
   document.getElementById('gmlink').href = 'https://www.google.com/maps/search/?api=1&query='+loc.lat+','+loc.lng;
-  document.getElementById('mapo').style.display = 'flex';
-  loadLeaflet(function(){
-    setTimeout(function(){
-      initMap(loc);
-    }, 200);
+
+  /* s-map slide ni aktivlashtirish (transform yo'q, shaffof) */
+  var slide = document.getElementById('s-map');
+  slide.style.transform = 'translateX(0)';
+  slide.style.pointerEvents = 'all';
+
+  /* Backdrop qorayishi */
+  var bd = document.getElementById('map-backdrop');
+  bd.style.pointerEvents = 'all';
+  requestAnimationFrame(function(){
+    bd.style.background = 'rgba(0,0,0,0.55)';
   });
+
+  /* Sheet pastdan yuqoriga chiqishi */
+  var sheet = document.getElementById('map-sheet');
+  requestAnimationFrame(function(){
+    sheet.style.transform = 'translateY(0)';
+  });
+
+  /* Leaflet yuklab xarita chizish */
+  loadLeaflet(function(){ initMap(loc); });
 }
 
-function closeMap(e) {
-  if (e.target === document.getElementById('mapo')) closeMapBtn();
-}
-function closeMapBtn() {
-  document.getElementById('mapo').style.display = 'none';
+function closeMapScreen() {
+  var sheet = document.getElementById('map-sheet');
+  var bd = document.getElementById('map-backdrop');
+  var slide = document.getElementById('s-map');
+
+  sheet.style.transform = 'translateY(100%)';
+  bd.style.background = 'rgba(0,0,0,0)';
+  bd.style.pointerEvents = 'none';
+
+  setTimeout(function(){
+    slide.style.transform = '';
+    slide.style.pointerEvents = 'none';
+  }, 380);
 }
 </script>
 </body>
